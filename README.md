@@ -49,6 +49,9 @@ After each row, return to `agent::run` and locate where that responsibility ente
 the loop. Keep three things separate as you read: the conversation sent to the
 model, the journal used for recovery, and the UI events shown to the user.
 
+For a second pass, use [the failure cases](#learn-the-invariants-by-reading-failure-cases)
+to see what each invariant protects.
+
 ## Trace one edit through the harness
 
 Follow [`examples/demo.py`](examples/demo.py). It supplies a scripted model over

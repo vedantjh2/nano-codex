@@ -1,0 +1,30 @@
+[package]
+name = "nano-codex"
+version = "0.1.0"
+edition = "2024"
+description = "A small, readable coding agent for learning harness engineering"
+license = "MIT"
+repository = "https://github.com/vedantjh2/nano-codex"
+
+[dependencies]
+anyhow = "1"
+base64 = "0.22"
+clap = { version = "4", features = ["derive", "env"] }
+fs2 = "0.4"
+ignore = "0.4"
+jsonwebtoken = "9"
+rand = "0.8"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "stream"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal", "process", "time", "io-util", "io-std", "net"] }
+toml = "0.8"
+uuid = { version = "1", features = ["v4"] }
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[dev-dependencies]
+ring = "0.17"
+tempfile = "3"

@@ -1,6 +1,6 @@
 [package]
 name = "nano-codex"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2024"
 description = "A small, readable coding agent for learning harness engineering"
 license = "MIT"

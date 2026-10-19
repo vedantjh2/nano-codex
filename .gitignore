@@ -1,0 +1,6 @@
+/target/
+/.nano-codex/
+.env
+.DS_Store
+__pycache__/
+/events.jsonl

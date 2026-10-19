@@ -16,3 +16,8 @@ frameworks, generic abstractions, or compressed code.
 - Keep tokens, auth files, and user traces out of source control.
 - Verify changes with `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`,
   and the relevant tests. Keep the offline demo working.
+- Before opening or updating a PR, follow `CONTRIBUTING.md`. Run an end-to-end
+  scenario for the changed behavior, including a failure case, on the final commit.
+  Fill every PR-template section with actual results and clean-checkout reproduction
+  commands. Never invent results or mark checks you did not perform. A new commit
+  requires fresh verification and an updated tested SHA in the PR description.

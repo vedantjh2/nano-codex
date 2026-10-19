@@ -28,7 +28,8 @@
         "strict_required_status_checks_policy": true,
         "required_status_checks": [
           {"context": "check (ubuntu-latest)", "integration_id": 15368},
-          {"context": "check (macos-latest)", "integration_id": 15368}
+          {"context": "check (macos-latest)", "integration_id": 15368},
+          {"context": "PR evidence", "integration_id": 15368}
         ]
       }
     }

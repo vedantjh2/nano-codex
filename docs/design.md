@@ -15,9 +15,7 @@ small, usable coding-agent harness. This is the resulting implementation scope.
    without silently rerunning operations whose outcome is unknown.
 5. **Context engineering.** Load project instructions, keep a stable prefix, compact
    complete old turns, and make the loss of information explicit.
-6. **Authentication and isolation.** Support API keys, documented ChatGPT account
-   linking, and independent local-cluster credentials.
-7. **Observable, testable behavior.** JSONL events and deterministic fake-server
+6. **Observable, testable behavior.** JSONL events and deterministic fake-server
    tests establish correctness independently of model quality.
 
 ## Architecture
@@ -32,7 +30,6 @@ flowchart LR
     Policy --> Tools[Files / shell]
     Agent --> Journal[Locked JSONL journal]
     Agent --> UI[Text / JSONL events]
-    Auth[API key / OAuth] --> Provider
 ```
 
 There is one crate and no agent framework. Domain types are small. Provider JSON
@@ -51,13 +48,6 @@ configured endpoint, or directly invoke Rust functions.
 - Compaction is deterministic and lossy. It needs no second model and is easy to
   inspect; the journal retains the original records.
 - The terminal UI displays events. It does not own policy or conversation state.
-- OAuth is split into flow, token validation/refresh, and storage so security
-  concepts remain visible in manageable files.
-- Codex account compatibility uses the official login implementation and an
-  isolated credential home. Linking an existing account is explicitly read-only;
-  credential ownership is recorded as data rather than guessed from its path.
-- First-run setup owns connection choices and model discovery. It stores no keys
-  and does not change the agent loop.
 - Performance mechanisms implemented here are streaming and stable prompt layout.
   Decoder algorithms remain in the connected inference engine.
 
@@ -75,3 +65,17 @@ configured endpoint, or directly invoke Rust functions.
 Each extension should be a small, independently understandable change with a
 failure-oriented test. A feature should earn its complexity by teaching a concept
 or making an ordinary coding workflow work correctly.
+
+## Supporting infrastructure
+
+Authentication and first-run setup make the CLI usable with real services. They
+sit outside the core harness curriculum above. Read [USAGE.md](../USAGE.md) to
+connect a model; study [authentication](authentication.md) afterward if useful.
+
+- OAuth is split into flow, token validation/refresh, and storage so security
+  concepts remain visible in manageable files.
+- Codex account compatibility uses the official login implementation and an
+  isolated credential home. Linking an existing account is explicitly read-only;
+  credential ownership is recorded as data rather than guessed from its path.
+- First-run setup owns connection choices and model discovery. It stores no keys
+  and does not change the agent loop.

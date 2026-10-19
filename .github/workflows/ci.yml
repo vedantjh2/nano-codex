@@ -1,7 +1,11 @@
 name: Rust
-on: [push, pull_request]
+on:
+  push:
+    branches: [main, master]
+  pull_request:
 permissions:
   contents: read
+  pull-requests: read
 jobs:
   check:
     strategy:
@@ -10,13 +14,27 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Classify changed paths
+        id: scope
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/change_scope.py --event-file "$GITHUB_EVENT_PATH" >> "$GITHUB_OUTPUT"
       - uses: dtolnay/rust-toolchain@stable
+        if: steps.scope.outputs.docs_only != 'true'
         with:
           components: rustfmt, clippy
-      - run: cargo fmt --check
-      - run: cargo clippy --locked --all-targets -- -D warnings
-      - run: cargo test --locked
-      - run: cargo build --locked
-      - run: python3 tests/first_run.py
-      - run: python3 examples/demo.py
-      - run: python3 -m unittest discover -s tests -p 'test_*.py'
+      - name: Check code and end-to-end behavior
+        if: steps.scope.outputs.docs_only != 'true'
+        run: |
+          cargo fmt --check
+          cargo clippy --locked --all-targets -- -D warnings
+          cargo test --locked
+          cargo build --locked
+          python3 tests/first_run.py
+          python3 examples/demo.py
+          python3 -m unittest discover -s tests -p 'test_*.py'
+      - name: Documentation-only change
+        if: steps.scope.outputs.docs_only == 'true'
+        run: echo 'No build or test run required for documentation-only changes.'

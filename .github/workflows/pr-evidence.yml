@@ -4,6 +4,7 @@ on:
     types: [opened, edited, synchronize, reopened, ready_for_review]
 permissions:
   contents: read
+  pull-requests: read
 concurrency:
   group: pr-evidence-${{ github.event.pull_request.number }}
   cancel-in-progress: true
@@ -18,3 +19,5 @@ jobs:
           ref: ${{ github.event.pull_request.base.sha }}
           persist-credentials: false
       - run: python3 scripts/check-pr-evidence.py --event-file "$GITHUB_EVENT_PATH"
+        env:
+          GH_TOKEN: ${{ github.token }}

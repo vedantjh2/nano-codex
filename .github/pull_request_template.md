@@ -2,6 +2,10 @@
 
 TODO: Explain the concrete problem and resulting behavior.
 
+<!-- Documentation-only PRs: keep Change and delete all sections below.
+No tests, tested SHA, results, or reproduction steps are required.
+Code, build, dependency, and workflow changes: fill every section below. -->
+
 ## Tested commit
 
 TODO: Paste the full output of git rev-parse HEAD after testing this commit.

@@ -6,17 +6,33 @@ for the concepts this project teaches.
 
 1. Fork the repository and create a branch for one focused change.
 2. Explain the behavior being changed and keep the Rust files concise.
-3. Complete the testing requirements below on the final commit.
-4. Fill [the PR template](.github/pull_request_template.md), validate the description,
-   and open a pull request against `main`.
+3. For code or automation changes, complete the testing requirements below on the
+   final commit. Documentation-only changes are exempt.
+4. Fill [the PR template](.github/pull_request_template.md) for the change type and
+   open a pull request against `main`.
 
 Automated checks use fake servers and temporary workspaces. Do not commit account
 credentials or session traces. Live model tests are optional and explicit.
 
-## Required before opening a PR
+## Documentation-only changes
 
-These requirements apply to humans and coding agents. Agents must read this guide
-before editing, perform the checks themselves, and inspect their output. Do not
+README edits, usage instructions, and other documentation-only changes need a
+short `## Change` summary. No test run, tested commit SHA, output evidence, or
+reproduction instructions are required. Delete the remaining PR-template sections.
+Agents should proofread the changed text and check that referenced files exist.
+
+The exemption covers `.md`, `.mdx`, `.rst`, and `.adoc` files, plus images under
+`docs/`. CI checks the actual changed-file list, including both sides of renames.
+Mixed documentation/code PRs, scripts, workflows, dependency files, and executable
+examples still follow the full requirements below. An incomplete file list never
+grants an exemption. Documentation-only CI reports success without building or
+running tests; owner review and the pull-request requirement still apply.
+
+## Required before opening a code or automation PR
+
+These requirements apply to humans and coding agents making code or automation
+changes. Agents must read this guide before editing, perform the checks themselves,
+and inspect their output. Do not
 open a ready-for-review PR with promised tests, invented output, or unchecked
 template items. If execution is blocked, report the blocker and keep the work local
 or in a draft; do not claim that it passed.
@@ -40,8 +56,8 @@ one successful scenario and one relevant failure or boundary case. For example,
 an edit-tool change must demonstrate both a successful edit and an ambiguous or
 missing match; an auth change must demonstrate valid and rejected credentials using
 a fake server. A unit test alone does not establish that the full user flow works.
-Add a focused automated regression test when fixing a behavioral bug. For docs or
-workflow changes, run the baseline and exercise the changed commands or automation.
+Add a focused automated regression test when fixing a behavioral bug. For workflow
+changes, run the baseline and exercise the changed automation.
 
 In the **PR description itself**, provide all of the following:
 
@@ -65,19 +81,22 @@ python3 scripts/check-pr-evidence.py --body-file /tmp/pr.md --commit "$(git rev-
 gh pr create --body-file /tmp/pr.md
 ```
 
-The required **PR evidence** check rejects missing sections, placeholders, missing
-commands/results, unchecked attestations, and evidence for an older commit. It reruns
+For code or automation changes, the required **PR evidence** check rejects missing
+sections, placeholders, missing commands/results, unchecked attestations, and
+evidence for an older commit. It reruns
 when the description changes or commits are pushed. This checks the evidence's
 structure; the owner still reviews whether the scenario and results are convincing.
-The workflow reads PR text as data using trusted base-branch code and never runs
-commands from the description or executes the contributor's code.
+The workflow classifies actual changed paths and reads PR text using trusted
+base-branch code. It never runs commands from the description or executes the
+contributor's code.
 
 ## Review and merging
 
 Every change to `main` must go through a pull request, including changes by the
 owner. Direct pushes, force pushes, and deletion of the protected branches are
-blocked. Linux CI, macOS CI, and PR evidence must pass, and review conversations
-must be resolved. The owner also has to meet these testing requirements.
+blocked. Linux CI, macOS CI, and PR evidence must report success, and review
+conversations must be resolved. For documentation-only changes, these checks apply
+the exemption above. The owner follows the same rules.
 
 [Vedant Jhaveri (@vedantjh2)](https://github.com/vedantjh2) is the code owner for
 every file. Contributions require his approval, and new commits dismiss previous

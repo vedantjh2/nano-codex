@@ -1,6 +1,7 @@
 # Harness engineering, through nano-codex
 
-Read `agent.rs` first. Follow one tool call outward through the modules, then come
+Use [the README reading map](../README.md#read-the-code-in-this-order), then open
+[`agent.rs`](../src/agent.rs) first. Follow one tool call outward through the modules, then come
 back to the loop. The harness is the program around the model: it decides what the
 model sees, which actions can happen, what gets remembered, and when work stops.
 
@@ -11,7 +12,7 @@ Calls are observations-to-be: they do nothing until the harness validates and
 executes them. Their results become the next request's input. A completed response
 without calls ends the task. Reaching `max_steps` is an explicit stop, not success.
 
-**Read:** `agent.rs`, `protocol.rs`.
+**Read:** [`agent.rs`](../src/agent.rs), [`protocol.rs`](../src/protocol.rs).
 
 **Interview:** Why is one model request insufficient for a coding agent? What
 prevents an infinite tool loop? Does a model saying “done” establish correctness?
@@ -28,7 +29,8 @@ multiple matches mean ambiguous intent. Both are rejected. A tool error can occu
 after partial side effects, so a failed shell command is not proof that nothing
 changed.
 
-**Read:** `tools/mod.rs`, `tools/files.rs`, `tools/paths.rs`.
+**Read:** [`tools/schema.rs`](../src/tools/schema.rs), [`tools/mod.rs`](../src/tools/mod.rs),
+[`tools/files.rs`](../src/tools/files.rs), [`tools/paths.rs`](../src/tools/paths.rs).
 
 **Interview:** Why are a JSON schema, an approval prompt, and a sandbox three
 different mechanisms? Why must denial be checked outside the model? What are the
@@ -45,7 +47,9 @@ terminal event. Chat requires its finish reason and `[DONE]`; Responses requires
 `response.completed`. A disconnect, failed event, or length stop discards the
 partial completion. There is no inference retry after a stream starts.
 
-**Read:** `provider/sse.rs`, `provider/chat.rs`, `provider/responses.rs`.
+**Read:** [`provider/sse.rs`](../src/provider/sse.rs),
+[`provider/chat.rs`](../src/provider/chat.rs), [`provider/responses.rs`](../src/provider/responses.rs),
+[`provider/response_state.rs`](../src/provider/response_state.rs).
 
 **Interview:** What breaks if each TCP chunk is parsed as JSON? When can you safely
 execute a streamed tool call? Why might retrying a partially displayed response
@@ -62,6 +66,9 @@ The loop handles `Message` and `ToolCall`. Only adapters construct provider JSON
 Keeping adapters separate prevents a convenient common interface from silently
 discarding state that one provider needs.
 
+**Read:** [`protocol.rs`](../src/protocol.rs), [`provider/chat.rs`](../src/provider/chat.rs),
+[`provider/responses.rs`](../src/provider/responses.rs).
+
 **Interview:** What belongs in a provider abstraction? Which data should remain
 opaque? Why can dropping reasoning items break later tool turns?
 
@@ -77,7 +84,8 @@ was saved. This design prefers an honest “inspect before retrying” over clai
 exactly-once execution. A lock prevents two processes from writing one session.
 Only an incomplete final journal record is discarded after a crash.
 
-**Read:** `session.rs`; then the resume tests in `tests/state.rs`.
+**Read:** [`session.rs`](../src/session.rs); then the resume tests in
+[`tests/state.rs`](../tests/state.rs).
 
 **Interview:** How would you make a payment tool idempotent? Why isn't a filesystem
 journal sufficient to guarantee exactly-once shell execution? How do you recover
@@ -94,35 +102,13 @@ This trades recall for simplicity. Older command output is still in the journal
 but no longer in the model's context. If the active task itself is too large, the
 agent stops. Raising the local budget does not raise the model's context window.
 
-**Read:** `context.rs`.
+**Read:** [`context.rs`](../src/context.rs).
 
 **Interview:** What facts must survive summarization? Why can dropping one tool
 result invalidate an otherwise sensible context? How would you evaluate compaction
 quality, or implement exact token accounting across different models?
 
-## 7. Authentication and secrets
-
-An API key and a ChatGPT subscription token represent different grants. Local
-servers have a third credential path. A provider never falls back to sending an
-OpenAI secret to an arbitrary cluster URL.
-
-Codex account compatibility delegates sign-in and isolated-session renewal to
-the official Codex CLI. Linked existing sessions remain read-only. The separate
-native OAuth example below shows how the protocol works without that dependency.
-
-OAuth uses a random state to bind the callback, PKCE to bind the code exchange,
-and a nonce to bind the ID token. OIDC signature, issuer, audience, expiration,
-and subject checks precede trusting identity. Scope checks establish permission
-to use the plan. A process lock serializes refresh-token rotation.
-
-**Read:** `auth/codex.rs`, `auth/codex_source.rs`, `auth/codex_rpc.rs`, then
-`auth/oauth.rs`, `auth/tokens.rs`, `auth/store.rs`.
-
-**Interview:** Why isn't base64-decoding a JWT enough? What race occurs if two
-processes refresh one rotating token? What happens if refresh succeeds remotely
-and the process crashes before saving the new token?
-
-## 8. Execution lifetime and budgets
+## 7. Execution lifetime and budgets
 
 Shell stdout and stderr are drained concurrently, with only a bounded prefix kept.
 Reading one pipe to completion before the other can deadlock. A new process group
@@ -134,13 +120,14 @@ They make runaway behavior visible and recoverable. They do not establish that a
 task is correct: the model still needs to run appropriate checks and report their
 results.
 
-**Read:** `tools/shell.rs`, `config.rs`.
+**Read:** [`tools/shell.rs`](../src/tools/shell.rs), [`config.rs`](../src/config.rs),
+[`main.rs`](../src/main.rs).
 
 **Interview:** Why can killing only the immediate child leak work? Which resources
 would you meter in a hosted agent? How should cancellation interact with approval
 prompts and operations that cannot be rolled back?
 
-## 9. Performance and evaluation
+## 8. Performance and evaluation
 
 Streaming lowers perceived latency; it does not make unsafe partial calls valid.
 A stable instruction/tool prefix gives an inference server an opportunity to reuse
@@ -156,3 +143,49 @@ The fake-server tests establish harness behavior, not coding intelligence. Build
 a model evaluation set separately: tiny repositories, a task prompt, hidden checks,
 a clean starting state, and a reproducible budget. Retain failed traces; categorize
 model reasoning failures separately from harness protocol or execution failures.
+
+## 9. Observability and end-to-end verification
+
+Follow a `tool_call` event from the loop through the UI, then find the matching
+`tool_result`. These events explain what happened; the session journal separately
+records what must survive a restart. Streaming text is presentation, not permission
+to execute a partially received call.
+
+The offline demo runs the real CLI against a scripted HTTP server and checks the
+resulting file. Its shell tool runs the fixture's unit tests. Trace the same flow
+in the integration tests, including denials, broken streams, cancellation, and
+resume. This gives a repeatable way to distinguish a harness bug from a poor model
+answer before trying a live inference cluster.
+
+**Read:** [`ui.rs`](../src/ui.rs), [`examples/demo.py`](../examples/demo.py),
+[`tests/cli.rs`](../tests/cli.rs), [`tests/lifecycle.rs`](../tests/lifecycle.rs).
+
+**Interview:** Which events would let you reconstruct a failed task? How would you
+measure verified success rather than merely receiving a final answer?
+
+## Optional appendix: account access
+
+Authentication is connection plumbing. Read this after the core harness concepts;
+[USAGE.md](../USAGE.md#openai-account-access) covers signing in.
+
+An API key and a ChatGPT subscription token represent different grants. Local
+servers have a third credential path. A provider never falls back to sending an
+OpenAI secret to an arbitrary cluster URL.
+
+Codex account compatibility delegates sign-in and isolated-session renewal to
+the official Codex CLI. Linked existing sessions remain read-only. The separate
+native OAuth example below shows how the protocol works without that dependency.
+
+OAuth uses a random state to bind the callback, PKCE to bind the code exchange,
+and a nonce to bind the ID token. OIDC signature, issuer, audience, expiration,
+and subject checks precede trusting identity. Scope checks establish permission
+to use the plan. A process lock serializes refresh-token rotation.
+
+**Read:** [`auth/codex.rs`](../src/auth/codex.rs),
+[`auth/codex_source.rs`](../src/auth/codex_source.rs), [`auth/codex_rpc.rs`](../src/auth/codex_rpc.rs),
+then [`auth/oauth.rs`](../src/auth/oauth.rs), [`auth/tokens.rs`](../src/auth/tokens.rs),
+[`auth/store.rs`](../src/auth/store.rs).
+
+**Interview:** Why isn't base64-decoding a JWT enough? What race occurs if two
+processes refresh one rotating token? What happens if refresh succeeds remotely
+and the process crashes before saving the new token?

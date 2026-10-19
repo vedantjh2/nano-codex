@@ -13,6 +13,10 @@ async fn renewal_uses_initialize_then_account_read_with_refresh() {
     let account: Value =
         serde_json::from_slice(&std::fs::read(root.path().join("account.json")).unwrap()).unwrap();
     assert_eq!(initialize["method"], "initialize");
+    assert_eq!(
+        initialize["params"]["clientInfo"]["version"],
+        env!("CARGO_PKG_VERSION")
+    );
     assert_eq!(account["method"], "account/read");
     assert_eq!(account["params"]["refreshToken"], true);
 }

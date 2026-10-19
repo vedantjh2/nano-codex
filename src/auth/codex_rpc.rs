@@ -56,7 +56,7 @@ async fn renew(mut command: Command) -> Result<()> {
     let mut input = child.stdin.take().unwrap();
     let mut output = BufReader::new(child.stdout.take().unwrap());
     let result = tokio::time::timeout(Duration::from_secs(45), async {
-        let initialize = json!({"id":1,"method":"initialize","params":{"clientInfo":{"name":"nano_codex","version":"0.1.0"}}});
+        let initialize = json!({"id":1,"method":"initialize","params":{"clientInfo":{"name":"nano_codex","version":env!("CARGO_PKG_VERSION")}}});
         input.write_all(format!("{initialize}\n").as_bytes()).await?;
         reply(&mut output, 1).await?;
         let account = json!({"id":2,"method":"account/read","params":{"refreshToken":true}});

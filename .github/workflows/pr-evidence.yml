@@ -1,0 +1,20 @@
+name: Contribution evidence
+on:
+  pull_request_target:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+permissions:
+  contents: read
+concurrency:
+  group: pr-evidence-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  evidence:
+    name: PR evidence
+    runs-on: ubuntu-latest
+    steps:
+      # Use only trusted base-branch code; never check out or execute the PR head.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+      - run: python3 scripts/check-pr-evidence.py --event-file "$GITHUB_EVENT_PATH"

@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import re
 import sys
+from change_scope import event_docs_only
 
 HEADINGS = ("Change", "Tested commit", "End-to-end test", "Reproduction", "Limitations", "Checklist")
 ATTESTATIONS = (
@@ -47,8 +48,12 @@ def command_block(text):
     return any(filled(block) for block in re.findall(r"```(?:sh|bash|shell)\n(.*?)\n```", text, re.S))
 
 
-def validate(body, commit):
+def validate(body, commit, documentation=False):
     parts = sections(body)
+    if documentation:
+        if not filled(parts.get("Change", "")):
+            raise ValueError("Describe the documentation change in the Change section")
+        return
     for heading in HEADINGS:
         if not filled(parts.get(heading, "")):
             raise ValueError(f"Fill the {heading!r} section without placeholders")
@@ -81,19 +86,25 @@ def main():
     source.add_argument("--body-file", type=Path)
     parser.add_argument("--commit")
     args = parser.parse_args()
+    documentation = False
     if args.event_file:
-        pr = json.loads(args.event_file.read_text())["pull_request"]
+        event = json.loads(args.event_file.read_text())
+        pr = event["pull_request"]
+        documentation = event_docs_only(event)
         body, commit = pr.get("body") or "", pr["head"]["sha"]
     else:
         body, commit = args.body_file.read_text(), args.commit
         if not commit:
             parser.error("--body-file requires --commit")
     try:
-        validate(body, commit)
+        validate(body, commit, documentation)
     except ValueError as error:
         print(f"PR evidence: {error}. See CONTRIBUTING.md.", file=sys.stderr)
         return 1
-    print("PASS: PR evidence includes current-commit E2E results and reproduction steps.")
+    if documentation:
+        print("PASS: documentation-only PR; test evidence and reproduction steps are not required.")
+    else:
+        print("PASS: PR evidence includes current-commit E2E results and reproduction steps.")
     return 0
 
 
